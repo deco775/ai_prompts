@@ -1,30 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import Form from "@components/Form";
 
-const UpdatePrompt = () => {
+const UpdatePromptContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const promptId = searchParams.get("id");
 
-  const [post, setPost] = useState({ prompt: "", tag: "", });
+  const [post, setPost] = useState({ prompt: "", tag: "" });
   const [submitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const getPromptDetails = async () => {
-      const response = await fetch(`/api/prompt/${promptId}`);
-      const data = await response.json();
+      if (!promptId) return;
+      try {
+        const response = await fetch(`/api/prompt/${promptId}`);
+        if (!response.ok) throw new Error("Failed to fetch prompt");
 
-      setPost({
-        prompt: data.prompt,
-        tag: data.tag,
-      });
+        const data = await response.json();
+        setPost({ prompt: data.prompt, tag: data.tag });
+      } catch (error) {
+        console.error(error);
+      }
     };
 
-    if (promptId) getPromptDetails();
+    getPromptDetails();
   }, [promptId]);
 
   const updatePrompt = async (e) => {
@@ -36,17 +39,15 @@ const UpdatePrompt = () => {
     try {
       const response = await fetch(`/api/prompt/${promptId}`, {
         method: "PATCH",
-        body: JSON.stringify({
-          prompt: post.prompt,
-          tag: post.tag,
-        }),
+        body: JSON.stringify(post),
+        headers: { "Content-Type": "application/json" },
       });
 
       if (response.ok) {
         router.push("/");
       }
     } catch (error) {
-      console.log(error);
+      console.error(error);
     } finally {
       setIsSubmitting(false);
     }
@@ -54,12 +55,20 @@ const UpdatePrompt = () => {
 
   return (
     <Form
-      type='Edit'
+      type="Edit"
       post={post}
       setPost={setPost}
       submitting={submitting}
       handleSubmit={updatePrompt}
     />
+  );
+};
+
+const UpdatePrompt = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <UpdatePromptContent />
+    </Suspense>
   );
 };
 
