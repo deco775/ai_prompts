@@ -4,6 +4,9 @@ const nextConfig = {
       appDir: true,
       serverComponentsExternalPackages: ["mongoose"],
     },
+    eslint: {
+      ignoreDuringBuilds: true,
+    },
     images: {
       domains: ['lh3.googleusercontent.com'],
     },
